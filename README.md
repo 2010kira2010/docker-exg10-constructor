@@ -16,6 +16,8 @@ mv .env.hub ./hub/.env
 mv Dockerfile.constructor ./constructor/Dockerfile
 mv Dockerfile.hub ./hub/Dockerfile
 
+docker compose up -d postgres redis
+docker compose build
 docker compose up -d
 ```
 
