@@ -19,6 +19,18 @@ mv Dockerfile.hub ./hub/Dockerfile
 docker compose up -d
 ```
 
+# Update
+```bash
+cd /opt/Telegram-Bots/frontend
+git pull
+
+cd /opt/Telegram-Bots/constructor
+git pull
+
+cd /opt/Telegram-Bots/hub
+git pull
+```
+
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information on this.
 
