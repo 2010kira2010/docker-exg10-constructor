@@ -1,0 +1,56 @@
+services:
+  tg_hub:
+    image: tg_hub:latest
+    container_name: tg_hub
+    build:
+      context: .
+      dockerfile: hub/Dockerfile
+    ports:
+      - "8085:8000"
+    depends_on:
+      - redis
+      - postgres      
+    restart: unless-stopped
+    dns:
+      - 172.16.100.1
+      
+  tg_constructor:
+    image: tg_constructor:latest
+    container_name: tg_constructor
+    build:
+      context: .
+      dockerfile: constructor/Dockerfile
+    ports:
+      - "8084:8000"
+    depends_on:
+      - redis
+      - postgres       
+      - tg_hub
+    restart: unless-stopped
+    dns:
+      - 172.16.100.1
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+    
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRESQL_DATABASE_NAME}
+      POSTGRES_USER: ${POSTGRESQL_DATABASE_USER}
+      POSTGRES_PASSWORD: ${POSTGRESQL_DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:      
+
+

@@ -1,0 +1,40 @@
+# Dockerfile
+FROM python:3.11-slim
+
+# Устанавливаем зависимости для работы с PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev gettext && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем Node.js 22.5.x
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создаём рабочую директорию
+WORKDIR /app
+
+# Копируем файлы проекта, сохраняя символические ссылки
+COPY constructor /app
+COPY frontend /app/frontend
+
+# Копируем patch файл
+COPY changes-constructor.patch /app/changes-constructor.patch
+
+# Собираем фронтенд
+WORKDIR /app/frontend
+RUN npm ci && npm run build
+
+# Возвращаемся в корневую директорию проекта
+WORKDIR /app
+
+# Применяем патч
+RUN git apply changes-constructor.patch
+
+# Устанавливаем зависимости
+RUN python -m venv env \
+    && /bin/bash -c "source env/bin/activate && pip install --upgrade pip && source install.sh"
+
+# Указываем переменные окружения
+ENV PATH="/app/env/bin:$PATH"
+
+# Команда по умолчанию
+CMD ["sh", "-c", "nohup python manage.py runserver 0.0.0.0:8000 > logs/server.log 2>&1 & nohup celery -A constructor_telegram_bots worker --loglevel=INFO -f logs/celery.log & wait"]

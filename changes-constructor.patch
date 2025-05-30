@@ -1,0 +1,86 @@
+diff --git a/constructor_telegram_bots/settings.py b/constructor_telegram_bots/settings.py
+index c0baed04..04421265 100644
+--- a/constructor_telegram_bots/settings.py
++++ b/constructor_telegram_bots/settings.py
+@@ -33,10 +33,15 @@ FRONTEND_PATH: Final[str] = os.environ['FRONTEND_PATH']
+ POSTGRESQL_DATABASE_NAME: Final[str] = os.environ['POSTGRESQL_DATABASE_NAME']
+ POSTGRESQL_DATABASE_USER: Final[str] = os.environ['POSTGRESQL_DATABASE_USER']
+ POSTGRESQL_DATABASE_PASSWORD: Final[str] = os.environ['POSTGRESQL_DATABASE_PASSWORD']
++POSTGRESQL_DATABASE_HOST: Final[str] = os.environ['POSTGRESQL_DATABASE_HOST']
++POSTGRESQL_DATABASE_PORT: Final[str] = os.environ['POSTGRESQL_DATABASE_PORT']
+ 
+ 
+-ALLOWED_HOSTS: Final[list[str]] = ['*'] if DEBUG else ['constructor.exg1o.org']
+-CSRF_TRUSTED_ORIGINS: Final[list[str]] = ['https://*.exg1o.org']
++ALLOWED_HOSTS: Final[list[str]] = ['*'] if DEBUG else os.environ['ALLOWED_HOSTS'].split(',')
++CSRF_TRUSTED_ORIGINS: Final[list[str]] = os.environ['CSRF_TRUSTED_ORIGINS'].split(',')
++
++REDIS_HOST: Final[list[str]] = os.environ['REDIS_HOST']
++REDIS_PORT: Final[list[str]] = os.environ['REDIS_PORT']
+ 
+ 
+ CSRF_COOKIE_AGE: Final[int] = 2419200  # 4 weeks
+@@ -54,8 +59,8 @@ JWT_TOKEN_COOKIE_HTTPONLY: Final[bool] = True
+ JWT_TOKEN_COOKIE_SAMESITE: Final[Literal['Lax', 'Strict', 'None']] = 'Lax'
+ 
+ 
+-CELERY_BROKER_URL: Final[str] = 'redis://127.0.0.1:6379'
+-CELERY_RESULT_BACKEND: Final[str] = 'redis://127.0.0.1:6379'
++CELERY_BROKER_URL: Final[str] = f'redis://{REDIS_HOST}:{REDIS_PORT}'
++CELERY_RESULT_BACKEND: Final[str] = f'redis://{REDIS_HOST}:{REDIS_PORT}'
+ CELERY_ACCEPT_CONTENT: Final[list[str]] = ['application/json']
+ CELERY_RESULT_SERIALIZER: Final[str] = 'json'
+ CELERY_TASK_SERIALIZER: Final[str] = 'json'
+@@ -138,7 +143,7 @@ WSGI_APPLICATION: Final[str] = 'constructor_telegram_bots.wsgi.application'
+ CACHES: Final[dict[str, dict[str, Any]]] = {
+     'default': {
+         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+-        'LOCATION': 'redis://127.0.0.1:6379',
++        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}',
+     }
+ }
+ 
+@@ -149,8 +154,8 @@ DATABASES: Final[dict[str, dict[str, Any]]] = {
+         'NAME': POSTGRESQL_DATABASE_NAME,
+         'USER': POSTGRESQL_DATABASE_USER,
+         'PASSWORD': POSTGRESQL_DATABASE_PASSWORD,
+-        'HOST': '127.0.0.1',
+-        'PORT': '5432',
++        'HOST': POSTGRESQL_DATABASE_HOST,
++        'PORT': POSTGRESQL_DATABASE_PORT,
+     },
+ }
+ DEFAULT_AUTO_FIELD: Final[str] = 'django.db.models.BigAutoField'
+diff --git a/install.sh b/install.sh
+index c8c8cb65..654f09e4 100644
+--- a/install.sh
++++ b/install.sh
+@@ -4,28 +4,5 @@ pip install -U pip
+ pip install poetry
+ poetry install
+ 
+-SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(25))")
+-
+-read -p "Enter Telegram bot API-token: " TELEGRAM_BOT_TOKEN
+-read -p "Enter path to the 'dist' directory of the frontend: " FRONTEND_PATH
+-read -p "Enter PostgreSQL database name: " POSTGRESQL_DATABASE_NAME
+-read -p "Enter PostgreSQL database user: " POSTGRESQL_DATABASE_USER
+-read -p "Enter PostgreSQL database password: " POSTGRESQL_DATABASE_PASSWORD
+-
+-cat << EOF > .env
+-SECRET_KEY=$SECRET_KEY
+-
+-DEBUG=True
+-ENABLE_TELEGRAM_AUTH=False
+-
+-TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+-
+-FRONTEND_PATH=$FRONTEND_PATH
+-
+-POSTGRESQL_DATABASE_NAME=$POSTGRESQL_DATABASE_NAME
+-POSTGRESQL_DATABASE_USER=$POSTGRESQL_DATABASE_USER
+-POSTGRESQL_DATABASE_PASSWORD=$POSTGRESQL_DATABASE_PASSWORD
+-EOF
+-
+ python manage.py compilemessages -i env
+ python manage.py migrate
